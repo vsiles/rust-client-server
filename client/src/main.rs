@@ -25,16 +25,15 @@ async fn main() {
     let stdin_to_ws = stdin_rx.map(Ok).forward(write);
     let ws_to_stdout = {
         read.for_each(|message| async {
+            let mut stdout = tokio::io::stdout();
             let data = message.unwrap().into_data();
             let str : String = String::from_utf8(data).expect("Illegal message, invalid UTF-8");
             let json : Value = serde_json::from_str(&str).expect("Invalid JSON");
-            // let addr = &json["addr"].as_str().unwrap();
-            // let msg = format!("Answer: {}", addr);
-            let pretty : String = serde_json::to_string_pretty(&json).expect("Failed to prettify JSON");
-            eprintln!("DEBUG: {}", pretty);
-            tokio::io::stdout().write_all(pretty.as_bytes()).await.unwrap();
-            // tokio::io::stdout().write_all(msg.as_bytes()).await.unwrap();
-            tokio::io::stdout().flush().await.unwrap();
+            let addr = &json["addr"].as_str().unwrap();
+            let msg = format!("Answer: {}\n", addr);
+            // let pretty : String = serde_json::to_string_pretty(&json).expect("Failed to prettify JSON");
+            stdout.write_all(msg.as_bytes()).await.unwrap();
+            stdout.flush().await.unwrap();
         })
     };
 
